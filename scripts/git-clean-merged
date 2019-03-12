@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -eo
+IFS=$'\n\t'
+
+#/ Usage:
+#/ Description:
+#/ Examples:
+#/ Options:
+#/   --help: Display this help message
+usage() { grep '^#/' "$0" | cut -c4- ; exit 0 ; }
+expr "$*" : ".*--help" > /dev/null && usage
+
+readonly LOG_FILE="/tmp/$(basename "$0").log"
+info()    { echo "[INFO]    $*" | tee -a "$LOG_FILE" >&2 ; }
+warning() { echo "[WARNING] $*" | tee -a "$LOG_FILE" >&2 ; }
+error()   { echo "[ERROR]   $*" | tee -a "$LOG_FILE" >&2 ; }
+fatal()   { echo "[FATAL]   $*" | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
+
+cleanup() { error "Failure... Cleaning up"; }
+
+delete_branches() {
+  branch_count=$(echo $* | wc -w | tr -d '[:space:]')
+  if [[ $branch_count != 0 ]]; then
+    echo "Deleting " $branch_count " branches"
+    echo $* | xargs git branch -D
+  fi
+}
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+  # trap cleanup EXIT
+  # Script goes here
+  info "Checking out master"
+  git checkout master
+  info "Fetching latest remote"
+  git fetch origin
+  info "Pruning remote branches"
+  git remote prune origin
+  info "Removing branches with no references"
+  git branch -vv | grep -v "master" | grep "origin/.*: gone]" | awk "{print $1}" | delete_branches $(xargs)
+  info "Removing merged branches"
+  git branch --merged | grep -v "master" | awk "{print $1}" | delete_branches $(xargs)
+fi

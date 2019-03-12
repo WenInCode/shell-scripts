@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-set -eo
+set -e
 IFS=$'\n\t'
 
-#/ Usage:
-#/ Description:
-#/ Examples:
+#/ Name: git-clean-merged
+#/ Description: Prunes the origin remote and deletes any branches that don't have a reference on remote, or that have been merged.
+#/ Examples: git-clean-merged
 #/ Options:
 #/   --help: Display this help message
 usage() { grep '^#/' "$0" | cut -c4- ; exit 0 ; }
@@ -12,11 +12,8 @@ expr "$*" : ".*--help" > /dev/null && usage
 
 readonly LOG_FILE="/tmp/$(basename "$0").log"
 info()    { echo "[INFO]    $*" | tee -a "$LOG_FILE" >&2 ; }
-warning() { echo "[WARNING] $*" | tee -a "$LOG_FILE" >&2 ; }
 error()   { echo "[ERROR]   $*" | tee -a "$LOG_FILE" >&2 ; }
-fatal()   { echo "[FATAL]   $*" | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
-
-cleanup() { error "Failure... Cleaning up"; }
+# cleanup() { error "Failure... Cleaning up"; }
 
 delete_branches() {
   branch_count=$(echo $* | wc -w | tr -d '[:space:]')
